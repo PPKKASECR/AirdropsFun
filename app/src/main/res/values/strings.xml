@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">AirdropsFun</string>
+
+    <!-- Airdrop List Screen -->
+    <string name="airdrops_list_title">Airdrops Activos</string>
+    <string name="no_airdrops_available">No hay airdrops disponibles en este momento.</string>
+    <string name="add_airdrop_content_description">Añadir Airdrop</string>
+
+    <!-- Airdrop Detail Screen -->
+    <string name="step_by_step_guide">Guía Paso a Paso</string>
+    <string name="open_airdrop_link_button">Abrir Enlace del Airdrop</string>
+
+    <!-- Common -->
+    <string name="error_message_prefix">Error: %1$s</string>
+    <string name="airdrop_date_prefix">Fecha: %1$s</string>
+
+    <!-- Strings que FALTABAN y que ahora hemos añadido -->
+    <string name="title_activity_admin_airdrop">Panel de Admin</string>
+    <string name="title_activity_register">Registro</string>
+</resources>
