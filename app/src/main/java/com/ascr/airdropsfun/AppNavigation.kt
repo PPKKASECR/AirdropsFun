@@ -26,9 +26,6 @@ fun AppNavigation() {
         navController = navController,
         startDestination = startDestination
     ) {
-        // LoginScreen, RegisterScreen, AirdropListScreen, and AirdropDetailScreen
-        // composables remain unchanged from the previous step.
-        // ...
         composable(Routes.LoginScreen.route) {
             val authState by authViewModel.authState.collectAsState()
 
@@ -94,6 +91,7 @@ fun AppNavigation() {
             )
         }
 
+        // --- CORRECCIÓN APLICADA AQUÍ ---
         composable(Routes.AirdropDetailScreen.route) { backStackEntry ->
             val airdropId = backStackEntry.arguments?.getString("airdropId")
             LaunchedEffect(airdropId) {
@@ -102,22 +100,28 @@ fun AppNavigation() {
                 }
             }
             val state by airdropViewModel.airdropDetailState.collectAsState()
+
             AirdropDetailScreen(
                 state = state,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                // Conecta el evento de clic con la acción del ViewModel.
+                onDeleteClicked = {
+                    if (airdropId != null) {
+                        airdropViewModel.deleteAirdrop(airdropId)
+                        // Vuelve a la pantalla anterior después de borrar.
+                        navController.popBackStack()
+                    }
+                }
             )
         }
 
-        // UPDATE: Connect the onSaveClick lambda to the ViewModel.
         composable(Routes.AddAirdropScreen.route) {
             AddAirdropScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onSaveClick = { titulo, fecha, descripcion, enlace ->
-                    // 1. Call the ViewModel to save the data to Firestore.
                     airdropViewModel.saveAirdrop(titulo, fecha, descripcion, enlace)
-                    // 2. Navigate back to the list screen.
                     navController.popBackStack()
                 }
             )

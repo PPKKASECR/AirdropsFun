@@ -3,7 +3,6 @@ package com.ascr.airdropsfun
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-// CORRECCIÓN: Añadir import para obtener el usuario actual
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
@@ -33,7 +32,6 @@ data class AirdropDetails(
     val descripcion: String = "",
     val enlace: String = "",
     val steps: List<AirdropStep> = emptyList(),
-    // CORRECCIÓN: Añadir campo para el ID del propietario, que coincidirá con las reglas de seguridad.
     val ownerId: String = ""
 )
 
@@ -88,41 +86,30 @@ class AirdropViewModel : ViewModel() {
             }
     }
 
-    /**
-     * CORRECCIÓN: La función de guardado ahora incluye el ID del usuario.
-     */
     fun saveAirdrop(titulo: String, fecha: String, descripcion: String, enlace: String) {
-        // 1. Obtener el ID del usuario actualmente logueado.
         val userId = Firebase.auth.currentUser?.uid
-
-        // 2. Comprobación de seguridad: no guardar si no hay un usuario.
         if (userId == null) {
             Log.e("AirdropViewModel", "Error: Intento de guardar un airdrop sin un usuario logueado.")
-            // Opcional: podrías emitir un estado de error para notificar al usuario.
             return
         }
 
         viewModelScope.launch {
             try {
-                // 3. Crear el objeto incluyendo el ownerId.
                 val newAirdrop = AirdropDetails(
                     titulo = titulo,
                     fecha = fecha,
                     descripcion = descripcion,
                     enlace = enlace,
                     steps = emptyList(),
-                    ownerId = userId // Se añade el ID del propietario.
+                    ownerId = userId
                 )
-
                 firestore.collection("airdrops").add(newAirdrop).await()
-
             } catch (e: Exception) {
                 Log.e("AirdropViewModel", "Error saving airdrop", e)
             }
         }
     }
 
-    // La función fetchAirdropById para la pantalla de detalle no necesita cambios.
     fun fetchAirdropById(airdropId: String) {
         viewModelScope.launch {
             _airdropDetailState.value = AirdropDetailState.Loading
@@ -137,6 +124,36 @@ class AirdropViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _airdropDetailState.value = AirdropDetailState.Error(e.message ?: "An unknown error occurred.")
+            }
+        }
+    }
+
+    /**
+     * Deletes an airdrop document from Firestore using its ID.
+     * This also checks if the user attempting the deletion is the owner.
+     */
+    fun deleteAirdrop(airdropId: String) {
+        val userId = Firebase.auth.currentUser?.uid
+        if (userId == null) {
+            Log.e("AirdropViewModel", "Cannot delete: User not logged in.")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val airdropRef = firestore.collection("airdrops").document(airdropId)
+                val document = airdropRef.get().await()
+                val ownerId = document.getString("ownerId")
+
+                // Security check: Only the owner can delete the airdrop
+                if (ownerId == userId) {
+                    airdropRef.delete().await()
+                    // The SnapshotListener in listenForAirdrops will automatically update the list.
+                } else {
+                    Log.w("AirdropViewModel", "SECURITY: User $userId tried to delete airdrop owned by $ownerId")
+                }
+            } catch (e: Exception) {
+                Log.e("AirdropViewModel", "Error deleting airdrop", e)
             }
         }
     }
